@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 💕</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #ec7391 0%, #ffa5c8 50%, #ff85b3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Phase 1: Invite Screen */
+        #invite-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        #invite-screen.fade-out {
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .timer {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .timer.hidden {
+            display: none;
+        }
+
+        .question {
+            font-family: 'Dancing Script', cursive;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            color: #fff;
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+            animation: floatIn 1s ease-out;
+        }
+
+        @keyframes floatIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #yes-btn {
+            background: linear-gradient(135deg, #ed4f84 0%, #ff85b3 100%);
+            color: white;
+        }
+
+        #yes-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #yes-btn.green {
+            background: linear-gradient(135deg, #ff1493 0%, #ec127f 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        #yes-btn.pulse {
+            animation: pulse 1.5s infinite, grow 2s forwards;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            }
+            50% {
+                box-shadow: 0 10px 50px rgba(168, 224, 99, 0.6);
+            }
+        }
+
+        @keyframes grow {
+            to {
+                transform: scale(1.2);
+            }
+        }
+
+        #no-btn {
+            background: linear-gradient(135deg, #ffa5c8 0%, #ffb8d1 100%);
+            color: white;
+            position: absolute;
+        }
+
+        #no-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Phase 2: Dashboard */
+        #dashboard {
+            display: none;
+            min-height: 100vh;
+            padding: 2rem;
+            animation: fadeIn 1s ease-in;
+        }
+
+        #dashboard.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .dashboard-header h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            color: #fff;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 15px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        .card h2 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .card-content {
+            color: rgba(255,255,255,0.95);
+        }
+
+        /* Compliment Generator */
+        #compliment-display {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1.5rem;
+            border-radius: 15px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff85b3 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Coupon Book */
+        .coupon {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coupon-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .redeem-btn {
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .redeem-btn:hover:not(.redeemed) {
+            transform: scale(1.1);
+        }
+
+        .redeem-btn.redeemed {
+            background: linear-gradient(135deg, #ff85b3 0%, #ffa5c8 100%);
+            cursor: default;
+        }
+
+        /* Spotify Embed */
+        .spotify-container {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .spotify-placeholder {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3rem 1rem;
+            text-align: center;
+            border-radius: 15px;
+        }
+
+        .spotify-placeholder p {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .spotify-placeholder code {
+            background: rgba(0,0,0,0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        /* Memory Gallery */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .polaroid {
+            background: white;
+            padding: 0.8rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transform: rotate(0deg);
+            transition: transform 0.3s;
+        }
+
+        .polaroid:nth-child(odd) {
+            transform: rotate(-2deg);
+        }
+
+        .polaroid:nth-child(even) {
+            transform: rotate(2deg);
+        }
+
+        .polaroid:hover {
+            transform: rotate(0deg) scale(1.05);
+            z-index: 10;
+        }
+
+        .polaroid-img {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.9rem;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .polaroid-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .polaroid-caption {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #333;
+            font-family: 'Dancing Script', cursive;
+        }
+
+        /* Coupon Dialogue Modal */
+        .coupon-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .coupon-modal.active {
+            display: flex;
+        }
+
+        .coupon-ticket {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 0;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease;
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .coupon-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .coupon-header::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: white;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+
+        .coupon-header h3 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .coupon-header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.9rem;
+        }
+
+        .coupon-body {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .coupon-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .coupon-title-large {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .coupon-message {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .coupon-code {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff85b3 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .coupon-footer {
+            border-top: 2px dashed #e0e0e0;
+            padding: 1.5rem 2rem;
+            background: #f9f9f9;
+        }
+
+        .coupon-instructions {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        .close-modal-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .close-x {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .close-x:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .timer {
+                top: 1rem;
+                right: 1rem;
+                padding: 0.8rem 1.2rem;
+                font-size: 1.2rem;
+            }
+
+            .buttons-container {
+                gap: 1rem;
+            }
+
+            .btn {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .coupon-ticket {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .coupon-header h3 {
+                font-size: 1.5rem;
+            }
+
+            .coupon-title-large {
+                font-size: 2rem;
+            }
+
+            .coupon-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Falling Hearts Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Phase 1: Invite Screen -->
+    <div id="invite-screen">
+        <div id="timer" class="timer">5</div>
+        <h1 class="question">My Dearest Pheabe</h1>
+        <h1 class="question">Will You Be My Valentine? 💖</h1>
+        <div class="buttons-container">
+            <button id="yes-btn" class="btn" disabled>Yes! 💖</button>
+            <button id="no-btn" class="btn">No</button>
+        </div>
+    </div>
+
+    <!-- Coupon Modal -->
+    <div id="coupon-modal" class="coupon-modal">
+        <div class="coupon-ticket">
+            <div class="coupon-header">
+                <button class="close-x" onclick="closeCouponModal()">✕</button>
+                <h3>🎉 Coupon Redeemed! 🎉</h3>
+                <p>Your special gift is ready</p>
+            </div>
+            <div class="coupon-body">
+                <div class="coupon-icon" id="coupon-emoji">💆</div>
+                <div class="coupon-title-large" id="coupon-name">Relaxing Massage</div>
+                <p class="coupon-message">
+                    This coupon entitles you to one amazing experience!<br>
+                    Show this to redeem anytime. 💝
+                </p>
+                <div class="coupon-code" id="coupon-code">LOVE2025</div>
+            </div>
+            <div class="coupon-footer">
+                <p class="coupon-instructions">
+                    📸 Screenshot this coupon and show it to redeem!<br>
+                    Valid: Forever ∞
+                </p>
+                <button class="close-modal-btn" onclick="closeCouponModal()">Got It! 💖</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 2: Dashboard -->
+    <div id="dashboard">
+        <div class="dashboard-header">
+            <h1>Our Love Story 💕</h1>
+            <p>Every moment with you is my favorite moment</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Card 1: Words of Affirmation -->
+            <div class="card">
+                <h2>Sweet Words 💌</h2>
+                <div class="card-content">
+                    <div id="compliment-display">
+                        Click below to receive a heartfelt message! 💝
+                    </div>
+                    <button class="generate-btn" onclick="generateCompliment()">
+                        Send Me Love ✨
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Acts of Service -->
+            <div class="card">
+                <h2>Love Coupons 🎁</h2>
+                <div class="card-content">
+                    <div class="coupon">
+                        <span class="coupon-title">💆 Relaxing Massage</span>
+                        <button class="redeem-btn" data-coupon="Relaxing Massage" data-emoji="💆" onclick="redeemCoupon(this)">Redeem</button>
+                    </div>
+                    <div class="coupon">
+                        <span class="coupon-title">🍽️ Dinner Date Night</span>
+                        <button class="redeem-btn" data-coupon="Dinner Date Night" data-emoji="🍽️" onclick="redeemCoupon(this)">Redeem</button>
+                    </div>
+                    <div class="coupon">
+                        <span class="coupon-title">🎬 Movie Night</span>
+                        <button class="redeem-btn" data-coupon="Movie Night" data-emoji="🎬" onclick="redeemCoupon(this)">Redeem</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Quality Time -->
+            <div class="card">
+                <h2>Our Playlist 🎵</h2>
+                <div class="card-content">
+                    <div class="spotify-container">
+                        <div class="spotify-placeholder">
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/3qLGB9maPL1Dl4Axv2JSqW?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+                        </div>
+                      
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Memory Gallery -->
+            <div class="card">
+                <h2>Gifts & Memories 📸</h2>
+                <div class="card-content">
+                    <div class="gallery-grid">
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <!-- Add your image URL here -->
+                                <img src="IMG_0522.jpg" alt="Memory 1"> -->
+                                Photo 1
+                            </div>
+                            <div class="polaroid-caption">Our First Concert!!!</div>
+                        </div>
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <img src="IMG_3835.jpg" alt="Memory 2"> 
+                                Photo 2
+                            </div>
+                            <div class="polaroid-caption">How i see you</div>
+                        </div>
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <img src="IMG_3992.jpg" alt="Memory 2"> 
+                                Photo 3
+                            </div>
+                            <div class="polaroid-caption">How you look at me</div>
+                        </div>
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <img src="IMG_4095.jpg" alt="Memory 2"> 
+                                Photo 4
+                            </div>
+                            <div class="polaroid-caption">My fav trip , so far</div>
+                        </div>
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <img src="fav_pic.jpg" alt="Memory 2"> 
+                                Photo 5
+                            </div>
+                            <div class="polaroid-caption">I Like</div>
+                        </div>
+                        <div class="polaroid">
+                            <div class="polaroid-img">
+                                <img src="cozy.jpg" alt="Memory 2"> 
+                                Photo 6
+                            </div>
+                            <div class="polaroid-caption">Just Us</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ PHASE 1: INVITE SCREEN ============
+        
+        const noBtn = document.getElementById('no-btn');
+        const yesBtn = document.getElementById('yes-btn');
+        const inviteScreen = document.getElementById('invite-screen');
+        const dashboard = document.getElementById('dashboard');
+        const timerDisplay = document.getElementById('timer');
+        let noBtnTimeout;
+        let countdown = 5;
+
+        // Timer countdown function
+        function startTimer() {
+            const timerInterval = setInterval(() => {
+                countdown--;
+                timerDisplay.textContent = countdown;
+                
+                // At 4 seconds (countdown = 1), make Yes button green and add pulse
+                if (countdown === 1) {
+                    yesBtn.classList.add('green');
+                    yesBtn.classList.add('pulse');
+                }
+                
+                // At 5 seconds (countdown = 0), enable Yes button and hide timer
+                if (countdown === 0) {
+                    yesBtn.disabled = false;
+                    timerDisplay.classList.add('hidden');
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+
+        // Start timer when page loads
+        window.addEventListener('load', () => {
+            initializeNoBtn();
+            startTimer();
+        });
+
+        // Make "No" button jump away on hover/touch
+        function makeNoBtnJump() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const btnWidth = noBtn.offsetWidth;
+            const btnHeight = noBtn.offsetHeight;
+
+            const maxX = screenWidth - btnWidth - 40;
+            const maxY = screenHeight - btnHeight - 40;
+
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+        }
+
+        // Initialize "No" button position
+        function initializeNoBtn() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            noBtn.style.left = (screenWidth / 2 + 150) + 'px';
+            noBtn.style.top = (screenHeight / 2) + 'px';
+        }
+
+        // Mouse and touch events for "No" button
+        noBtn.addEventListener('mouseenter', makeNoBtnJump);
+        noBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            makeNoBtnJump();
+        });
+
+        // "Yes" button click handler
+        yesBtn.addEventListener('click', () => {
+            // Trigger falling hearts
+            createFallingHearts();
+            
+            // After 2 seconds, fade out invite and show dashboard
+            setTimeout(() => {
+                inviteScreen.classList.add('fade-out');
+                setTimeout(() => {
+                    inviteScreen.style.display = 'none';
+                    dashboard.classList.add('active');
+                }, 1000);
+            }, 2000);
+        });
+
+        window.addEventListener('resize', initializeNoBtn);
+
+        // ============ FALLING HEARTS ANIMATION ============
+        
+        function createFallingHearts() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const heartCount = 50;
+            const hearts = [];
+
+            class Heart {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height - canvas.height;
+                    this.size = Math.random() * 20 + 15; // Size between 15-35px
+                    this.speed = Math.random() * 2 + 1;
+                    this.swing = Math.random() * 2 - 1; // Swing left or right
+                    this.swingSpeed = Math.random() * 0.05 + 0.02;
+                    this.swingOffset = Math.random() * Math.PI * 2;
+                    this.opacity = Math.random() * 0.5 + 0.5; // Opacity between 0.5-1
+                }
+
+                update() {
+                    this.y += this.speed;
+                    this.swingOffset += this.swingSpeed;
+                    this.x += Math.sin(this.swingOffset) * this.swing;
+                    
+                    // Reset when heart goes off screen
+                    if (this.y > canvas.height) {
+                        this.y = -20;
+                        this.x = Math.random() * canvas.width;
+                    }
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.globalAlpha = this.opacity;
+                    ctx.fillStyle = 'white';
+                    
+                    // Draw heart shape
+                    const x = this.x;
+                    const y = this.y;
+                    const size = this.size;
+                    
+                    ctx.beginPath();
+                    // Top left curve
+                    ctx.moveTo(x, y + size / 4);
+                    ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 4);
+                    ctx.bezierCurveTo(x - size / 2, y + size / 2, x, y + size * 0.75, x, y + size);
+                    // Top right curve
+                    ctx.bezierCurveTo(x, y + size * 0.75, x + size / 2, y + size / 2, x + size / 2, y + size / 4);
+                    ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            for (let i = 0; i < heartCount; i++) {
+                hearts.push(new Heart());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                hearts.forEach(heart => {
+                    heart.update();
+                    heart.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            // Stop hearts after 5 seconds
+            setTimeout(() => {
+                canvas.style.display = 'none';
+            }, 5000);
+        }
+
+        // ============ PHASE 2: DASHBOARD FUNCTIONS ============
+
+        // Compliment Generator - EDIT THESE MESSAGES!
+        const compliments = [
+            "You're the reason I wake up with a smile every single day! 💕",
+            "Your smile lights up my entire world like nothing else can! ✨",
+            "Being with you feels like coming home, no matter where we are! 🏡💖",
+            "You're not just my Valentine, you're my forever and always! 💍",
+            "Every adventure is better when I'm by your side! 🌟",
+            "Your laugh is my favorite melody in the entire universe! 🎵😊",
+            "Thank you for being my person, my best friend, my everything! 🥰",
+            "Loving you is the easiest and best thing I've ever done! 💝",
+            "You make ordinary moments feel absolutely extraordinary! ✨🌈",
+            "My heart is so full because of you, now and forever! 💗",
+            "You're the most beautiful dream I never want to wake up from! 🌙",
+            "Every day with you is a new page in our perfect love story! 📖💕",
+            "You're my sunshine on cloudy days and my star in the night sky! ☀️⭐",
+            "I fall more deeply in love with you with each passing moment! 💫"
+        ];
+
+        function generateCompliment() {
+            const display = document.getElementById('compliment-display');
+            const randomCompliment = compliments[Math.floor(Math.random() * compliments.length)];
+            
+            // Fade effect
+            display.style.opacity = '0';
+            setTimeout(() => {
+                display.textContent = randomCompliment;
+                display.style.transition = 'opacity 0.5s';
+                display.style.opacity = '1';
+            }, 300);
+        }
+
+        // Coupon Redemption - Show Modal
+        function redeemCoupon(button) {
+            if (!button.classList.contains('redeemed')) {
+                const couponName = button.getAttribute('data-coupon');
+                const couponEmoji = button.getAttribute('data-emoji');
+                
+                // Generate unique coupon code
+                const couponCode = 'LOVE' + Math.floor(Math.random() * 9000 + 1000);
+                
+                // Update modal content
+                document.getElementById('coupon-emoji').textContent = couponEmoji;
+                document.getElementById('coupon-name').textContent = couponName;
+                document.getElementById('coupon-code').textContent = couponCode;
+                
+                // Show modal
+                document.getElementById('coupon-modal').classList.add('active');
+                
+                // Update button state
+                button.textContent = 'Redeemed! ✓';
+                button.classList.add('redeemed');
+                
+                // Add celebration effect
+                button.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 300);
+            }
+        }
+
+        // Close Coupon Modal
+        function closeCouponModal() {
+            document.getElementById('coupon-modal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside the ticket
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('coupon-modal');
+            if (event.target === modal) {
+                closeCouponModal();
+            }
+        });
+    </script>
+</body>
+</html>
